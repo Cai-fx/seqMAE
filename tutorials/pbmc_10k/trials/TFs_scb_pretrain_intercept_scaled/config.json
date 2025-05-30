@@ -1,0 +1,23 @@
+{
+    "model_config": 
+    {
+        "latent_dim" :  32, 
+        "infer_filter_num" :  288,
+        "kernel_sizes" : [17, 5, 5, 5, 5, 5, 5, 1],
+        "pool_sizes" :  [3, 2, 2, 2, 2, 2, 2, 1],
+        "layer_features" :  [288, 323, 363, 407, 456, 512, 256],
+        "encoder_features" : [32], 
+        "decoder_features" :  [],
+        "mlp_batchnorm" : true
+    },
+
+    "static_args":
+    {
+        "k_acc" : 1.0,
+        "k_rna" : 1.0,
+        "k_reg" : 0.0
+    },
+
+    "note":
+    "relu for mlp activation, rna scaled"
+}

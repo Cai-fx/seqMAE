@@ -1,0 +1,37 @@
+[project]
+name = "scb_multiome"
+version = "0.0.1"
+authors = [
+  { name="Example Author", email="author@example.com" },
+]
+description = "A small example package"
+readme = "README.md"
+requires-python = ">=3.9"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "scipy <=1.12.0,>= 1.6.0",
+    "numpy==1.26.4",
+    "jax[cuda12]==0.4.30",
+    "flax == 0.8.4",
+    "optax == 0.2.4",
+    "anndata",
+    "scanpy",
+    "gtfparse",
+    "pysam",
+    "pickle5",
+    "kneed",
+    "requests",
+    "pybedtools",
+    "pysam",
+
+]
+
+
+[project.urls]
+Homepage = "https://github.com/Cai-fx/scb_multiome_demo.git"
+Issues = "https://github.com/Cai-fx/scb_multiome_demo/issues"
