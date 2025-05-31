@@ -240,6 +240,38 @@ class Model(BaseModel):
             return {'acc': out_acc, 'rna': out_rna} 
         else:
             return 
+        
+        
+    def get_peak_emb(self, ds, n_batch=128):
+        cnn_model = Seq2PeakEmb_orig(latent_dim = self.model_config["latent_dim"],
+                                    known_filter = False,
+                                    infer_filter_num = self.model_config["infer_filter_num"],
+                                    kernel_sizes = self.model_config["kernel_sizes"],
+                                    pool_sizes = self.model_config["pool_sizes"],
+                                    layer_features  = self.model_config["layer_features"],
+                                    activation_func = jax.nn.gelu
+                                    )                    #(n_peak, d)
+        @jax.jit 
+        def apply_cnn(params, x_acc):
+            return cnn_model.apply(params, x_acc, 0, False)
+
+        n_batch = 128 
+        ds_size_acc = ds["x_acc"].shape[0]
+        n_cyc = n_batch if ds_size_acc%n_batch==0 else n_batch + 1
+        peak_emb = np.zeros((ds_size_acc, self.model_config["latent_dim"]))
+
+        perms = np.arange(n_batch*(ds_size_acc//n_batch)).reshape((n_batch, (ds_size_acc//n_batch)))
+        for i in tqdm(range(n_cyc)):
+            if i!= n_cyc-1:
+                perm = perms[i]
+            else:
+                perm = np.arange(i*(ds_size_acc//n_batch), ds_size_acc)
+            ds_batched = self.create_batch(perm=(perm, np.arange(1)), ds=ds)
+            peak_emb[perm, :] = apply_cnn({"params": self.state.params["Seq2PeakEmb_orig_0"],
+                                        "batch_stats": self.state.batch_stats["Seq2PeakEmb_orig_0"]},
+                                        ds_batched["x_acc"])  
+                
+        return peak_emb 
     
     
     

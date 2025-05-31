@@ -129,5 +129,5 @@ def celltype_specific_spearmanr(ad_atac,
                     )
 
         res = np.asarray(res)
-        celltype_specific_SpearmanR[f"spearmanR_{tf}_{ct}"] = res 
+        celltype_specific_SpearmanR[f"{tf}_{ct}"] = res 
     return celltype_specific_SpearmanR

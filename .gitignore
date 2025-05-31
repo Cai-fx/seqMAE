@@ -60,4 +60,5 @@ tutorials/pbmc_10k/data/all_seq_match/fimo_out
 tutorials/pbmc_10k/data/atac_data 
 tutorials/pbmc_10k/data/rna_data
 tutorials/pbmc_10k/data/chip_data
-tutorials/db_data
+tutorials/db_data 
+tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/benchmark_summarize/
