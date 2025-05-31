@@ -33,8 +33,8 @@ cd tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled
 . run.sh
 ```
 
-## 3. Model performance 
+## 3. Model performance & Benchmark
 See [performance.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/performance.ipynb)
-
+See [benchmark.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/benchmark.ipynb)
 
 
