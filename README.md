@@ -1,6 +1,6 @@
 # Install
 ```
-conda create -n scb_mult python>=3.9 
+conda create -n scb_mult python=3.9 
 conda activate scb_mult 
 conda install bioconda::bedtools 
 pip install git+https://github.com/Cai-fx/scb_multiome_demo.git
@@ -19,8 +19,7 @@ Download h5 file [here](https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_g
     - compute baseline metrics (spearmanR & motif matching score)
 
 ## 2. Model training
-The scripts are under [run_scripts](./run_scripts/)
-
+To train the model, modify run.sh files to include your data paths. 
 
 ## pretrain with scbasset using only atac data
 ```
@@ -34,7 +33,11 @@ cd tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled
 ```
 
 ## 3. Model performance & Benchmark
-See [performance.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/performance.ipynb)
-See [benchmark.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/benchmark.ipynb)
+[performance.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/performance.ipynb)
+- evaluate prediction accuracy
+- visualize latent dimensions
+- compute gradSeq & gradTF for TF activity (averaged over atac peaks)
 
+[benchmark.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/benchmark.ipynb)
+- evaluate TF binding prediction with baseline, standard & extended (35 dim) model metrics with cell type-specific ChIP-seq data as ground truth 
 
