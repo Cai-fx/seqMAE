@@ -61,13 +61,13 @@ def write_grad_tf(model, all_ds,
             seq = all_ds['x_acc'][i]
             grad = grad_tf(seq, tf_expr=all_ds['rna'], 
                             atac_dpth=np.repeat(np.mean(all_ds['atac_dpth'], keepdims=True), all_ds['atac_dpth'].shape[0]), 
-                            model=model,
                             grad_func=grad_func)
 
             grad = np.array(grad, dtype=np.float16)
             data.write_direct(grad, np.s_[:,:], np.s_[i,:,:])
 
     return
+
 
 
 # @partial(jax.jit, static_argnames=["model"])
@@ -93,7 +93,7 @@ def _grad_seq_func(atac_dpth, model):
     grad_func = jax.jit(grad_func)
     return grad_func
 
-@partial(jax.jit, static_argnames=["grad_func"])            ### jit vmap for speedup???
+@partial(jax.jit, static_argnames=["grad_func"]) 
 def grad_func_batched(seq, tf_expr, grad_func):
     grads = jax.vmap(lambda c: grad_func(seq, c), 
                                         in_axes=(0,), out_axes=0)(
@@ -105,6 +105,7 @@ def grad_seq(seq, tf_expr, grad_func, batch_size=1000):
     '''
     gradient wrt a sequence, mean across some cells 
     tf_expr: (n_cell, n_tf)        ->  input cell 
+    batch_size: over cells 
     ''' 
     
     grads = np.zeros((tf_expr.shape[0], *seq.shape)) 
@@ -116,7 +117,7 @@ def grad_seq(seq, tf_expr, grad_func, batch_size=1000):
                                                  )     ## (n_cell, 1344, 4)
     ## normalize gradient?
     # grads = grads/jnp.sum(jnp.abs(grads))
-    return grads        ## #(1344, 4)
+    return grads     
 
 def write_grad_seq(model, 
                    jaspar_motifs,
@@ -159,6 +160,61 @@ def write_grad_seq(model,
             data.write_direct(np.array(conv_seq, dtype=np.float16), np.s_[:,:], np.s_[i,:,:])
 
     return
+
+
+
+def get_grad_tf_small(model, all_ds, ):
+    grad_func = _grad_tf_func(model=model)
+    grads = np.zeros((all_ds['x_acc'].shape[0], all_ds['rna'].shape[0], all_ds['rna'].shape[1]))
+
+    for i in tqdm(range(all_ds['x_acc'].shape[0])):
+        seq = all_ds['x_acc'][i]
+        grad = grad_tf(seq, tf_expr=all_ds['rna'], 
+                        atac_dpth=np.repeat(np.mean(all_ds['atac_dpth'], keepdims=True), all_ds['atac_dpth'].shape[0]), 
+                        grad_func=grad_func)
+        
+        grads[i] = grad 
+
+    return grads 
+
+def get_grad_seq_small(model, 
+                   jaspar_motifs,
+                   all_ds,
+                   batch_size = 500,
+                   batch_size_cell = 100,
+                   ):
+    pwms = pad_pwm_df(jaspar_motifs)           
+    pwms_combined = np.concatenate([pwms, pwms[:,::-1,::-1]], axis=0)         ## (n_filt*2, filt_len, d)
+    norm_filters = jnp.sum(jnp.square(pwms_combined), axis=(1,2))
+    norm_filters = jnp.sqrt(norm_filters)                               #(n_filt,)
+    
+    grads = np.zeros((all_ds['x_acc'].shape[0], all_ds['rna'].shape[0], len(jaspar_motifs)))
+    
+    atac_dpth = np.mean(all_ds['atac_dpth'], keepdims=True)
+    grad_func = _grad_seq_func(atac_dpth, model)
+    
+    for i in tqdm(range(all_ds['x_acc'].shape[0])):
+        seq = all_ds['x_acc'][i]
+        grad = grad_seq(seq, tf_expr=all_ds['rna'], 
+                        grad_func=grad_func,
+                        batch_size=batch_size
+                        )       #(n_cell, 1344, 4)
+
+        conv_seq = np.zeros((all_ds['rna'].shape[0], len(jaspar_motifs)), dtype=np.float16)   #(n_cell, n_motif)
+        for i_start in range(0, grad.shape[0], batch_size_cell):
+            i_end = min(i_start+batch_size_cell, grad.shape[0])
+            conv_seq[i_start:i_end] = score_conv(grad_x_input=grad[i_start:i_end, :, :]*seq,
+                                                    pwms = pwms_combined,
+                                                    n_filt = pwms.shape[0],
+                                                    norm_filters=norm_filters,
+                                                    )                   #(n_cell, n_motif)
+            
+        # data[i] = np.array(conv_seq)                                    #(n_peak, n_cell, n_motif)
+        grads[i, i_start:i_end, :] = conv_seq 
+    return grads
+
+
+
 
 
 
