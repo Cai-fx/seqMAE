@@ -78,11 +78,12 @@ def pad_pwm_df(df, pad_val=0):
 def chip_atac_overlap(ad_atac:anndata.AnnData, 
                       encode_dir="", 
                       meta_data:pd.DataFrame=None,
-                      groupkey="Target of assay"):
+                      groupkey="Target of assay",
+                      bed_files_postfix="bed"):
     atac_peaks = ad_atac.var[["chr", "start", "end"]]
     atac_peaks.columns = ["chrom", 'start', 'stop']
     atac_bed = pybedtools.BedTool.from_dataframe(atac_peaks)
-    bed_files = glob.glob(f"{encode_dir}/*.bed")
+    bed_files = glob.glob(f"{encode_dir}/*.{bed_files_postfix}")
     
     print("num of bed files", len(bed_files))
     

@@ -202,9 +202,9 @@ class tf_act_logReg:
         self.label = label 
         self.split_traintest(downsample_frac=downsample_frac)
 
-        logReg = LogisticRegression(penalty=None, max_iter=100000)
-        logReg.fit(self.X[self.train_id, ], y=self.Y[self.train_id])        
-        self.y_pred = logReg.predict_proba(X)[:,1]
+        self.logReg = LogisticRegression(penalty=None, max_iter=100000)
+        self.logReg.fit(self.X[self.train_id, ], y=self.Y[self.train_id])        
+        self.y_pred = self.logReg.predict_proba(X)[:,1]
         self.eval_metrics()
         return 
     
@@ -248,9 +248,11 @@ class tf_act_cross_peaks:
         
         if not self.chip_bulk is None:
             peak_shared = peak_shared.intersection(self.chip_bulk.index) 
+            self.chip_bulk = chip_bulk.loc[peak_shared,:]
         
-        for df in [self.gt, *metrics]:
-            df = df.loc[peak_shared, :]
+        self.gt = self.gt.loc[peak_shared, :]
+        for i, df in enumerate(metrics):
+            self.metrics[i] = df.loc[peak_shared, :]
         pass
     
     def _get_metric_label_type(self, metric):
