@@ -262,7 +262,7 @@ class tf_act_cross_peaks:
         else:
             if len(metric.columns[0].split(":"))>1:
                 label_type = "tf:mm"  
-            elif metric.columns[0] in self.jaspar_motifs['tf']:
+            elif metric.columns[0] in self.jaspar_motifs['tf'].to_list():
                 label_type = "tf"
             else:
                 label_type="other"
