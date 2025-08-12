@@ -9,7 +9,7 @@ import jax
 import optax
 from functools import partial
 from tqdm import tqdm
-from ..utils.IOs import seq_rna_generator, seq_acc_generator, load_params
+from ..utils.IOs import seq_acc_generator, seq_rna_generator, load_params
 from ..utils.train_utils import trainState
 import flax 
 
@@ -20,13 +20,6 @@ import pickle
 
 class BaseModel(ABC):
     def __init__(self, **kwargs):  
-        # self.rna_u = rna_u                      #(n_gene, n_cell)
-        # self.rna_s = rna_s                      #(n_gene, n_cell)
-        # self.atac = atac
-        # self.preprocess_folder_rna = preprocess_folder_rna
-        # self.preprocess_folder_acc = preprocess_folder_acc
-        # self.peakemb_latent_dim = peakemb_latent_dim
-        
         for key in kwargs:
             setattr(self, key, kwargs[key])
         pass

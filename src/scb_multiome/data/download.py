@@ -5,7 +5,7 @@ import pandas as pd
 import requests
 
 
-REMOTE_URL = "https://github.com/Cai-fx/scb_multiome_demo/tree/main/src/scb_multiome/data"
+REMOTE_URL = "https://zenodo.org/records/16810645/files"
 
 def download_base(file_url:str, force_download=False, save_path=""):
     if save_path:
@@ -38,7 +38,22 @@ def download_base(file_url:str, force_download=False, save_path=""):
     
     return dest/filename
 
+
 def download_jaspar_motifs(force_download=False, save_path=""):
+    """
+    _mode = "draft" or "published"
+    """
     file_url = f"{REMOTE_URL}/20230424043428_JASPAR2022_combined_matrices_2028_meme.txt"
     return download_base(file_url=file_url, force_download=force_download, save_path=save_path)
 
+def download_encode_chip(force_download=False, save_path=""):
+    file_url = f"{REMOTE_URL}/ENCODE_ChIP.tar.gz"
+    return download_base(file_url=file_url, force_download=force_download, save_path=save_path)
+    
+def download_pbmc_supp(force_download=False, save_path=""):
+    file_url = f"{REMOTE_URL}/pbmc_data_for_zenodo.tar.gz"
+    return download_base(file_url=file_url, force_download=force_download, save_path=save_path)
+
+def download_pbmc_raw(force_download=False, save_path=""):
+    file_url = "https://cf.10xgenomics.com/samples/cell-arc/2.0.0/pbmc_granulocyte_sorted_10k/pbmc_granulocyte_sorted_10k_filtered_feature_bc_matrix.h5"
+    return download_base(file_url=file_url, force_download=force_download, save_path=save_path)

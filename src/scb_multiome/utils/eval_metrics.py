@@ -118,24 +118,6 @@ def plot_cell_embeddings(ad_rna, Z=[], keys=['rna_u', 'rna_s','acc'], color_key=
     return fig
 
 
-# def plot_shared_embedding(ad_rna, Z=[], keys=[], color_key="celltype"):
-#     ad_comb = anndata.AnnData(np.concatenate(Z))
-#     keys_rep = [z.shape[0] for z in Z]
-#     ad_comb.obs['celltype'] =np.tile(ad_rna.obs[color_key], len(Z))
-#     ad_comb.obs['modaltype'] = np.asarray([[keys[i]]*keys_rep[i] for i in range(len(keys))]).flatten()
-#     fig, (ax1, ax2) = plt.subplots(1,2, figsize=(6,3))
-#     sc.pp.neighbors(ad_comb, use_rep='X')
-#     sc.tl.umap(ad_comb)
-#     for i, k in enumerate(keys):
-#         ad_rna.obsm[f'X_shared_umap_{k}'] = ad_comb.obsm['X_umap'][ad_rna.n_obs*i:ad_rna.n_obs*(i+1),:]
-
-#     ax1 = sc.pl.umap(ad_comb, color='celltype', ax=ax1, show=False)
-#     ax2 = sc.pl.umap(ad_comb, color='modaltype', ax=ax2, show=False)
-#     return fig
-
-
-
-
 
 
 def _read_ids(pwm_model, ds_key="val", type="rna"):
@@ -149,24 +131,3 @@ def _read_ids(pwm_model, ds_key="val", type="rna"):
     with h5py.File(split_file, 'r') as hf:
         train_ids = hf[f'{ds_key}_ids'][:]
     return train_ids
-
-# def plot_dim_phases(Z0, Z1, Z0t=None, Z1t=None, xlabel="", ylabel="", colors=None):
-#     '''
-#     Z0: x
-#     Z1: y
-#     '''
-#     fig, axs = plt.subplots(4, 8, figsize=(5*8, 3*4), tight_layout=True)
-#     for i in range(32):
-#         axs[i//8, i%8].scatter(Z0[:,i], Z1[:,i], c=colors, s=1);
-        
-#         _min, _max = np.min([Z0[:,i], Z1[:,i]]), \
-#                         np.max([Z0[:,i],Z1[:,i]])
-        
-#         if Z0t is not None:
-#             axs[i//8, i%8].scatter(Z0t[:,i], Z1t[:,i], s=1);
-#             _min, _max = np.min([Z0[:,i], Z1[:,i], Z0t[:,i], Z1t[:,i]]), \
-#                         np.max([Z0[:,i],Z1[:,i], Z0t[:,i], Z1t[:,i]])
-#         axs[i//8, i%8].plot(np.linspace(_min, _max, 30), np.linspace(_min, _max, 30), alpha=0.5, color='grey');
-#     fig.supxlabel(xlabel);
-#     fig.supylabel(ylabel);
-#     return fig

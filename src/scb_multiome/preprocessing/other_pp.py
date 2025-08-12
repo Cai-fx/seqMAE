@@ -132,3 +132,26 @@ def celltype_specific_spearmanr(ad_atac,
         res = np.asarray(res)
         celltype_specific_SpearmanR[f"{tf}_{ct}"] = res 
     return celltype_specific_SpearmanR
+
+
+def read_fimo_res(fimo_dir, peak_idx:pd.Series, jaspar_motifs:pd.DataFrame, f_name="fimo.tsv",
+                  seq_name_key="sequence_name"):
+    '''reads fimo results of positive peaks, return those with p-val <0.05, pad others with 1'''
+    act_pval = []
+    for motif_id in jaspar_motifs['motif'].unique():
+        tf_name = jaspar_motifs[jaspar_motifs["motif"]==motif_id]["tf"].values[0]
+        file_name = f"{fimo_dir}/{motif_id}/{f_name}"
+        skiprows = sum(1 for line in open(file_name) if line.startswith('#')) 
+        fimo_res = pd.read_csv(file_name, sep="\t", skipfooter=skiprows)
+        if len(fimo_res)>0:
+            fimo_res = fimo_res[(fimo_res['p-value']<0.05) 
+                                #& (fimo_res['q-value']<0.05)
+                                ]                      # filter p & q val 
+            fimo_res.index = fimo_res[seq_name_key]
+            fimo_res = fimo_res.drop_duplicates(subset=seq_name_key, keep='first')                                                     # drop multiple indices in single sequence
+            act_scores = fimo_res.reindex(peak_idx, fill_value=1.)[["p-value"]]
+            act_scores = act_scores.rename({"p-value": f"{tf_name}:{motif_id}"}, axis=1)
+            act_pval.append(act_scores)
+    act_pval = pd.concat(act_pval, axis=1)
+    act_pval = np.log(act_pval)                  
+    return act_pval

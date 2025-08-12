@@ -15,11 +15,9 @@ from ..utils.train_utils import trainState
 import numpy as np
 import jax.numpy as jnp
 from .base_model import BaseModel
-from ..utils.eval_metrics import compute_metrics_rna, compute_metrics_acc
 from tqdm import tqdm
 from typing import Callable
 from flax.core.frozen_dict import FrozenDict
-import logging 
 
 
 
