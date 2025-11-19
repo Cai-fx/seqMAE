@@ -392,22 +392,54 @@ def read_grads_celltype(tfs_cts,
 
 
 ### ------------------ logistic regressions ------------------
-class tf_act_logReg:
+#### alternative wayas to combine the metrics
+import numpy as np 
+import pandas as pd 
+import h5py 
+from tqdm import tqdm 
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.neural_network import MLPClassifier
+from sklearn.svm import SVC
+from typing import List, Optional
+from sklearn.metrics import average_precision_score, f1_score
+from scipy.special import logit 
+
+
+class tf_act_Reg:
     def __init__(self, 
                  X, 
                  Y, 
                  Y_test,
                  downsample_frac=1.,
-                 label=""):
-        self.X = X              ## (n_peak, n_feature)
+                 label="",
+                 mode="logReg",
+                 **model_kwargs):
+        self.X = X                      ## (n_peak, n_feature)
         self.Y = Y 
         self.Y_test = Y_test
         self.label = label 
         self.split_traintest(downsample_frac=downsample_frac)
-
-        self.logReg = LogisticRegression(penalty=None, max_iter=100000)
-        self.logReg.fit(self.X[self.train_id, ], y=self.Y[self.train_id])        
-        self.y_pred = self.logReg.predict_proba(X)[:,1]
+        
+        if (mode=="logReg"):
+            self.model = LogisticRegression(penalty=None, max_iter=100000)    
+        elif (mode == "randomForest"):
+            self.model = RandomForestClassifier(**model_kwargs)
+        elif (mode=="XGBoost"):
+            self.model = GradientBoostingClassifier(**model_kwargs)
+        elif (mode =="MLP"):
+            self.model = MLPClassifier(**model_kwargs)
+        elif (mode == "svc"):
+            self.model = SVC(**model_kwargs)
+        else:
+            raise Exception("mode error")
+        
+        self.model.fit(self.X[self.train_id, ], y=self.Y[self.train_id])  
+        
+        if (mode=="logReg" or mode=="randomForest" or mode=="XGBoost" or mode=="MLP") : 
+            self.y_pred = self.model.predict_proba(X)[:,1]
+        elif (mode == "svc"):
+            self.y_pred = self.model.predict(X)
         self.eval_metrics()
         return 
     
@@ -428,12 +460,10 @@ class tf_act_logReg:
     
     def eval_metrics(self,):
         self.auprc = average_precision_score(y_score=self.y_pred, y_true=self.Y_test)
+        self.f1 = f1_score(y_true=self.Y_test, y_pred=(self.y_pred>0.5))
         return
-    
-    
 
-
-class tf_act_cross_peaks:
+class tf_act_cross_peaks_base:
     def __init__(self, 
                  gt:pd.DataFrame,
                  metrics:List[pd.DataFrame],
@@ -456,6 +486,8 @@ class tf_act_cross_peaks:
         self.gt = self.gt.loc[peak_shared, :]
         for i, df in enumerate(metrics):
             self.metrics[i] = df.loc[peak_shared, :]
+        
+        self.peak_shared = peak_shared
         pass
     
     def _get_metric_label_type(self, metric):
@@ -467,11 +499,12 @@ class tf_act_cross_peaks:
                 label_type = "tf:mm"  
             elif metric.columns[0] in self.jaspar_motifs['tf'].to_list():
                 label_type = "tf"
+            elif len([cc for cc in metric.columns if cc in self.gt.columns.str.split("_").str[1]])>0:
+                label_type = "ct"
             else:
                 label_type="other"
                 
         return label_type
-    
     
     @staticmethod
     def _get_tfmmct(metric:pd.DataFrame, label_type:str):
@@ -483,7 +516,10 @@ class tf_act_cross_peaks:
             else:
                 tf = tf_mm 
         if "ct" in label_type:
-            ct =  metric.columns.str.split("_").str[1] 
+            if (label_type == "tf:mm_ct") or (label_type == "tf_ct"):
+                ct =  metric.columns.str.split("_").str[1] 
+            elif (label_type=="ct"):
+                ct = metric.columns
         return tf, mm, ct  
     
     def tidy_metrics(self, tf_gt=None, ct_gt=None, mm_gt=None):
@@ -494,13 +530,13 @@ class tf_act_cross_peaks:
             label_type = self._get_metric_label_type(metric=metric)
             ## match tf & ct if both fields are present 
             m_sub = metric
-            tf, mm, ct = tf_act_cross_peaks._get_tfmmct(metric=m_sub, label_type=label_type)
+            tf, mm, ct = tf_act_cross_peaks_alt._get_tfmmct(metric=m_sub, label_type=label_type)
             if "tf" in label_type and not (tf_gt is None):
                 m_sub = m_sub.loc[:,tf==tf_gt] 
-                tf, mm, ct = tf_act_cross_peaks._get_tfmmct(metric=m_sub, label_type=label_type)
+                tf, mm, ct = tf_act_cross_peaks_alt._get_tfmmct(metric=m_sub, label_type=label_type)
             if "ct" in label_type and not (ct_gt is None):
                 m_sub = m_sub.loc[:,ct==ct_gt]
-                tf, mm, ct = tf_act_cross_peaks._get_tfmmct(metric=m_sub, label_type=label_type)
+                tf, mm, ct = tf_act_cross_peaks_alt._get_tfmmct(metric=m_sub, label_type=label_type)
             if "mm" in label_type and not (mm_gt) is None:
                 m_sub = m_sub.loc[:, mm==mm_gt]
             
@@ -509,9 +545,15 @@ class tf_act_cross_peaks:
             #(n_peak, n_feature)
         return X 
     
+
+class tf_act_cross_peaks_alt(tf_act_cross_peaks_base):
+    def __init__(self, gt, metrics, jaspar_motifs, chip_bulk = None):
+        super().__init__(gt, metrics, jaspar_motifs, chip_bulk)
+        pass
     
-    def logReg_all(self, downsample_frac=1., trainOn="chip_bulk"):
+    def logReg_all(self, downsample_frac=1., trainOn="chip_bulk", mode="logReg", **model_kwargs):
         self.logRegs_all = {}
+        y_pred = {}
         for tf_ct in tqdm(self.gt.columns): 
             tf, ct = tf_ct.split("_")[0], tf_ct.split("_")[1]
             motifs = self.jaspar_motifs[self.jaspar_motifs['tf']==tf]['motif']
@@ -524,21 +566,103 @@ class tf_act_cross_peaks:
                 else:
                     raise Exception(f"trainOn = 'chip_bulk' or 'gt'")
                                 
-                logreg = tf_act_logReg(X=X, 
-                                       Y=Y, 
-                                       Y_test=self.gt.loc[:,tf_ct].to_numpy(),
-                                       downsample_frac=downsample_frac,
-                                       label=f"{tf}:{mm}_{ct}")
+                logreg = tf_act_Reg(X=X, 
+                                    Y=Y, 
+                                    Y_test=self.gt.loc[:,tf_ct].to_numpy(),
+                                    downsample_frac=downsample_frac,
+                                    label=f"{tf}:{mm}_{ct}", 
+                                    mode=mode,
+                                    **model_kwargs)
                 
                 self.logRegs_all[f"{tf}:{mm}_{ct}"] = logreg 
+                y_pred[f"{tf}:{mm}_{ct}"] = logreg.y_pred
+        self.y_pred = pd.DataFrame(y_pred, index=self.gt.index)
         return
     
-    def auprcs_to_csv(self,):
+    def auprcs_to_csv(self, metric="auprc"):
         d_out = {}
         for k, v in self.logRegs_all.items():
-            d_out[k] = [v.auprc]
+            if metric == "auprc":
+                d_out[k] = [v.auprc]
+            if metric == "f1":
+                d_out[k] = [v.f1]
         return pd.DataFrame.from_dict(d_out)
     
+    
+class tf_act_cross_peaks_prod_acc(tf_act_cross_peaks_alt):
+    def __init__(self, gt, metrics, jaspar_motifs, chip_bulk=None, pred_acc=None):
+        super().__init__(gt, metrics, jaspar_motifs, chip_bulk)
+        if not pred_acc is None:
+            self.pred_acc = pred_acc.loc[self.peak_shared, :]
+        pass
+    
+    def logReg_all(self, downsample_frac=1., trainOn="chip_bulk", mode="logReg", **model_kwargs):
+        self.logRegs_all = {}
+        y_pred = {}
+        for tf_ct in tqdm(self.gt.columns): 
+            tf, ct = tf_ct.split("_")[0], tf_ct.split("_")[1]
+            motifs = self.jaspar_motifs[self.jaspar_motifs['tf']==tf]['motif']
+            for mm in motifs:
+                X = self.tidy_metrics(tf_gt=tf, ct_gt=ct, mm_gt=mm)
+                if trainOn=="chip_bulk":
+                    Y = self.chip_bulk.loc[:,tf].to_numpy()
+                elif trainOn=="gt":
+                    Y = self.gt.loc[:,tf_ct].to_numpy()
+                else:
+                    raise Exception(f"trainOn = 'chip_bulk' or 'gt'")
+                                
+                logreg = tf_act_Reg(X=X, 
+                                    Y=Y, 
+                                    Y_test=self.gt.loc[:,tf_ct].to_numpy(),
+                                    downsample_frac=downsample_frac,
+                                    label=f"{tf}:{mm}_{ct}", 
+                                    mode=mode,
+                                    **model_kwargs)
+                
+                self.logRegs_all[f"{tf}:{mm}_{ct}"] = logreg 
+                y_pred[f"{tf}:{mm}_{ct}"] = logreg.y_pred * self.pred_acc.loc[:,ct]
+        self.y_pred = pd.DataFrame(y_pred, index=self.gt.index)
+        
+        return
+    
+    def auprcs_to_csv(self, metric="auprc"):
+        return super().auprcs_to_csv(metric)
+
+
+from sklearn.metrics import average_precision_score
+from tqdm import tqdm 
+import warnings
+warnings.filterwarnings("ignore")
+
+def auprc_cross_cells(y_true, y_score):
+    """(n_peak, n_ct)"""
+    auprcs = np.zeros((y_true.shape[0]))
+    for i in tqdm(range(y_true.shape[0])):
+        auprcs[i] = average_precision_score(y_true=y_true[i,:], y_score=y_score[i,:])
+    return auprcs
+
+def get_auprc_cross_tfs(bm_to_plot_dict, df_gt):
+    y_pred_auprc = {}
+    for k in bm_to_plot_dict.keys():
+        bm_model = bm_to_plot_dict[k]
+        df_tmp = bm_model.y_pred.T
+        df_tmp['tf_ct'] = df_tmp.index.str.split("_").str[0].str.split(":").str[0] + "_" + df_tmp.index.str.split("_").str[1]
+        df_tmp = df_tmp.groupby("tf_ct").max().T.loc[df_gt.index, df_gt.columns]
+        auprc = auprc_cross_cells(df_gt.to_numpy(), df_tmp.to_numpy())
+        y_pred_auprc[k] = auprc 
+    return pd.DataFrame(y_pred_auprc, index=df_gt.index)
+
+def get_auprc_cross_peaks(bm_to_plot_dict, df_gt):
+    y_pred_auprc = {}
+    for k in bm_to_plot_dict.keys():
+        bm_model = bm_to_plot_dict[k]
+        df_tmp = bm_model.y_pred.T          ## after prod
+        df_tmp['tf_ct'] = df_tmp.index.str.split("_").str[0].str.split(":").str[0] + "_" + df_tmp.index.str.split("_").str[1]
+        df_tmp = df_tmp.groupby("tf_ct").max().T.loc[df_gt.index, df_gt.columns]        #(peak, tf_ct)
+        
+        auprc = auprc_cross_cells(df_gt.to_numpy().T, df_tmp.to_numpy().T)
+        y_pred_auprc[k] = auprc 
+    return pd.DataFrame(y_pred_auprc, index=df_gt.columns)
     
     
     

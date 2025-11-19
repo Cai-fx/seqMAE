@@ -45,10 +45,4 @@ cd tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled
 - compute gradSeq & gradTF for TF activity, average over atac peaks
 
 [benchmark.ipynb](tutorials/pbmc_10k/trials/TFs_scb_pretrain_intercept_scaled/benchmark.ipynb)
-- evaluate TF binding prediction across peaks with cell type specific chip data 
-- metrics:
-    - baseline (2 dim): spearmanR, fimo_pval
-    - standard (4 dim): spearmanR, fimo_pval, gradSeq, gradTF
-    - extended (35 dim): spearmanR, fimo_pval, gradTF, peakemb
-    - refless (1 dim): gradTF*gradSeq 
-
+- evaluate TF binding prediction across peaks and TF-cell type combinations with cell type specific chip data 
