@@ -40,14 +40,18 @@ def _grad_tf_func(model, ):
     return grad_func
 
 @partial(jax.jit, static_argnames=["grad_func"])
-def grad_tf(seq, tf_expr, atac_dpth, grad_func):            
-    '''
-    gradient for all tfs, evaluated at a sequence across all cells 
-    tf_expr: (n_cell, n_tf,)  
-    atac_dpth: (n_cell)
-    ret: 
-        (n_cell, n_tf)
-    ''' 
+def grad_tf(seq, tf_expr, atac_dpth, grad_func): 
+    """gradient for all tfs, evaluated at a sequence across all cells
+
+    Args:
+        seq (_type_): _description_
+        tf_expr (_type_): (n_cell, n_tf,)
+        atac_dpth (_type_): (n_cell)
+        grad_func (_type_): _description_
+
+    Returns:
+        _type_: (n_cell, n_tf)
+    """
     grads = jax.vmap(lambda tf_expr, atac_dpth: grad_func(tf_expr, seq, atac_dpth), in_axes=(0,0), out_axes=0)(
         tf_expr, atac_dpth
         )     #(n_cell, n_tf)

@@ -26,9 +26,9 @@ class BaseModel(ABC):
 
     @abstractmethod
     def create_model(self):
-        '''
-        should init self.model
-        '''
+        """
+        init self.model
+        """
         return
 
     def create_train_state(self, 
@@ -73,7 +73,7 @@ class BaseModel(ABC):
     def read_accrna_ds(self, ds_key='train', **kwargs) -> dict:
         '''
         wraps around self.read_ds 
-        returns dict of ds 
+        returns dict
         '''
         return 
     
@@ -132,28 +132,33 @@ class BaseModel(ABC):
     
     @abstractmethod
     def shuffle_batch(self, rng : Optional[PRNGKeyArray], ds, num_batch) -> Tuple:
-        '''
-        wraps around _shuffle_batch
-        if rng is None, no shuffle 
-        
+        """wraps around _shuffle_batch
+
         Args:
-        
-        Returns: 
-            perms: tuple of array of perm indices of size (num_batch, batch_size)
-        '''
+            rng (Optional[PRNGKeyArray]): if rng is None, no shuffle 
+            ds (_type_): dictionary
+            num_batch (_type_): _description_
+
+        Returns:
+            Tuple: tuple of array of perm indices, (num_batch, batch_size)
+        """
         return
     
     @abstractmethod
     def create_batch(self, perm, ds: dict) -> dict: 
-        '''
-        takes ds, permutate, output batch (dict)
+        """takes ds, permutate, output batch (dict)
         perms : array of ints, size (batch_size, ) :Tuple[np.ndarray[int], ...]
-        
-        example: 
-        {'x_acc': ds['x_acc'][perm_acc,:], 'x_rna': ds['x_rna'][perm_rna,:], 
-        'y_acc': ds['y_acc'][perm_acc,:],
-        'y_rna_u': ds['y_rna_u'][perm_rna,:], 'y_rna_s': ds['y_rna_s'][perm_rna,:]}
-        '''
+
+        Args:
+            perm (_type_): _description_
+            ds (dict): _description_
+
+        Returns:
+            dict: example 
+            {'x_acc': ds['x_acc'][perm_acc,:], 'x_rna': ds['x_rna'][perm_rna,:], 
+            'y_acc': ds['y_acc'][perm_acc,:],
+            'y_rna_u': ds['y_rna_u'][perm_rna,:], 'y_rna_s': ds['y_rna_s'][perm_rna,:]}
+        """
         return
     
     
@@ -170,12 +175,20 @@ class BaseModel(ABC):
             early_stop = False,
             early_stop_kwargs = {"stop_metric":"", "min_delta":1e-4, "patience":3}, 
             ):
-        '''
-        train, wraps around self.train_epoch
-        
+        """wraps around self.train_epoch
+
         Args:
-             
-        '''
+            train_ds (dict): _description_
+            val_ds (dict): _description_
+            static_args (flax.core.FrozenDict, optional): _description_. Defaults to flax.core.freeze({}).
+            n_epochs (int, optional): _description_. Defaults to 200.
+            num_train_batch (int, optional): _description_. Defaults to 100.
+            num_val_batch (int, optional): _description_. Defaults to 10.
+            rng (_type_, optional): _description_. Defaults to jax.random.PRNGKey(3456).
+            tidy_metrics (bool, optional): _description_. Defaults to True.
+            early_stop (bool, optional): _description_. Defaults to False.
+            early_stop_kwargs (dict, optional): _description_. Defaults to {"stop_metric":"", "min_delta":1e-4, "patience":3}.
+        """
         if "metrics" not in self.__dict__:
             self.metrics=[] 
         if early_stop:
@@ -211,10 +224,16 @@ class BaseModel(ABC):
                          n_val_batch : int,
                          static_args : flax.core.FrozenDict
                          ) -> None:
-        '''
-        update self.state and self.metrics,
-        trains for 1 epoch
-        '''
+        """update self.state and self.metrics
+
+        Args:
+            train_ds (dict): _description_
+            val_ds (dict): _description_
+            rng (PRNGKeyArray): _description_
+            n_train_batch (int): _description_
+            n_val_batch (int): _description_
+            static_args (flax.core.FrozenDict): _description_
+        """
         
         t_start = perf_counter()
         

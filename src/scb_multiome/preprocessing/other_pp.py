@@ -25,7 +25,7 @@ class MOTIF:
         return
 
 
-def read_JASPAR_pwms(meme_file):
+def read_JASPAR_pwms(meme_file) -> pd.DataFrame:
     start_line_num, width = 0, 0
     motifs = []
     with open(meme_file, 'r') as handle:
@@ -63,7 +63,16 @@ def read_JASPAR_pwms(meme_file):
 
 
 
-def pad_pwm_df(df, pad_val=0):
+def pad_pwm_df(df:pd.DataFrame, pad_val=0) -> np.ndarray:
+    """pad pwms to same length
+
+    Args:
+        df (pd.DataFrame): _description_
+        pad_val (int, optional): _description_. Defaults to 0.
+
+    Returns:
+        np.ndarray: _description_
+    """
     max_len = list(map(lambda x: x.shape[0], df['pwm']))
     max_len = np.max(max_len)
     print(f"max_len={max_len}")
