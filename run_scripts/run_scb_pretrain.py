@@ -3,7 +3,7 @@ os.environ["LD_LIBRARY_PATH"] = "$LD_LIBRARY_PATH:$CONDA_PREFIX/lib/"
 os.environ["XLA_PYTHON_CLIENT_MEM_FRACTION"] = "0.7"
 # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-import scb_multiome as scbm 
+import seqMAE 
 import numpy as np
 import scanpy as sc 
 import argparse
@@ -44,7 +44,7 @@ def main():
     
     ad_atac = sc.read_h5ad(arguments.atacpath)
     
-    model = scbm.core.scb_pretrain.Model(preprocess_folder_acc = arguments.atac_pp_path,
+    model = seqMAE.core.scb_pretrain.Model(preprocess_folder_acc = arguments.atac_pp_path,
                                     atac = ad_atac.X.T,
                                     model_config=config_d['model_config']
                                     )
