@@ -1,10 +1,10 @@
 # Install
 ```
-conda create -n scb_mult python=3.9 
-conda activate scb_mult 
+conda create -n seqMAE python=3.9 
+conda activate seqMAE 
 
-git clone git@github.com:Cai-fx/scb_multiome_demo.git
-cd scb_multiome_demo
+git clone git@github.com:Cai-fx/seqMAE.git
+cd seqMAE
 pip install . 
 ```
 

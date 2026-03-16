@@ -1,5 +1,5 @@
 [project]
-name = "scb_multiome"
+name = "seqMAE"
 version = "0.0.1"
 authors = [
   { name="Example Author", email="author@example.com" },
@@ -33,5 +33,5 @@ dependencies = [
 
 
 [project.urls]
-Homepage = "https://github.com/Cai-fx/scb_multiome_demo.git"
-Issues = "https://github.com/Cai-fx/scb_multiome_demo/issues"
+Homepage = "https://github.com/Cai-fx/seqMAE.git"
+Issues = "https://github.com/Cai-fx/seqMAE/issues"
